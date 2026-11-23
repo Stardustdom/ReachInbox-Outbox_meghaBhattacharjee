@@ -1,0 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  @apply bg-white text-gray-900 antialiased;
+}
+
+/* Placeholder + content styles for the compose rich-text editor */
+.rte:empty::before {
+  content: attr(data-placeholder);
+  @apply text-gray-400;
+}
+.rte ul {
+  @apply list-disc pl-6;
+}
+.rte ol {
+  @apply list-decimal pl-6;
+}
+.rte blockquote {
+  @apply border-l-4 border-gray-300 pl-3 text-gray-600;
+}
