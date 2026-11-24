@@ -22,6 +22,7 @@ export function StatusPill({ email }: { email: Email }) {
       title={email.status === 'delayed' ? 'Rescheduled by the hourly rate limit' : undefined}
     >
       <ClockIcon size={12} />
+      {email.status === 'delayed' && <span className="font-semibold">Rate limited ·</span>}
       {formatBadgeTime(email.scheduledAt)}
     </span>
   );
@@ -67,8 +68,11 @@ export function EmailList({ tab, emails, loading, searching, onOpen, onCompose }
             onClick={() => onOpen(e)}
             className="flex w-full flex-col items-start gap-1.5 px-4 py-3 text-left text-sm hover:bg-gray-50 sm:flex-row sm:items-center sm:gap-4 sm:px-6"
           >
-            <span className="flex w-full shrink-0 items-center justify-between gap-2 sm:w-52 sm:justify-start">
-              <span className="truncate font-medium text-gray-900">To: {e.recipient}</span>
+            <span className="flex w-full shrink-0 items-center justify-between gap-2 sm:w-64 sm:justify-start">
+              <span className="min-w-0 truncate">
+                <span className="block truncate text-xs text-gray-500">From: {e.senderEmail}</span>
+                <span className="block truncate font-medium text-gray-900">To: {e.recipient}</span>
+              </span>
               <span className="sm:hidden">
                 <StatusPill email={e} />
               </span>

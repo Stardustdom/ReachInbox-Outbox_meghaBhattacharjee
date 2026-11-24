@@ -6,6 +6,7 @@ import {
   completeSlackOAuth,
   disconnectSlack,
   getSlackConnection,
+  postToSlack,
   slackAuthorizeUrl,
   slackConfigured,
   verifySlackState,
@@ -52,6 +53,24 @@ router.get(
   asyncHandler(async (req, res) => {
     const conn = await getSlackConnection(req.user!.id);
     res.json({ available: slackConfigured(), connected: Boolean(conn), teamName: conn?.team_name ?? null, channel: conn?.channel ?? null });
+  }),
+);
+
+router.post(
+  '/test',
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const conn = await getSlackConnection(req.user!.id);
+    if (!conn) {
+      res.status(400).json({ error: 'Slack is not connected' });
+      return;
+    }
+    const ok = await postToSlack(conn, { text: ':white_check_mark: ReachInbox test alert: Slack is connected.' });
+    if (!ok) {
+      res.status(502).json({ error: 'Slack rejected the test message' });
+      return;
+    }
+    res.json({ ok: true });
   }),
 );
 

@@ -19,7 +19,7 @@ async function main() {
   const worker = config.runWorkerInProcess ? startWorker() : null;
 
   const server = createApp().listen(config.port, () => {
-    console.log(`[api] listening on http://localhost:${config.port}`);
+    console.log(`[api] listening on http://localhost:${config.port} (pid=${process.pid}, worker in-process=${!!worker})`);
     console.log(`[api] Bull Board: http://localhost:${config.port}/admin/queues`);
   });
 

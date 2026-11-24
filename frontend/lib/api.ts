@@ -48,6 +48,7 @@ export const api = {
     }),
 
   slackDisconnect: () => request<{ ok: boolean }>('/slack', { method: 'DELETE' }),
+  slackTest: () => request<{ ok: boolean }>('/slack/test', { method: 'POST' }),
   slackConnectUrl: '/api/slack/connect',
   googleLoginUrl: '/api/auth/google',
 };

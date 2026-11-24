@@ -26,6 +26,7 @@ export function EmailDetail({ email, onBack }: { email: Email; onBack: () => voi
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline justify-between gap-x-4">
             <p className="truncate text-sm">
+              <span className="text-gray-500">From </span>
               <span className="font-semibold">{email.senderEmail}</span>
             </p>
             <p className="text-xs text-gray-500">{email.sentAt ? 'Sent ' : 'Scheduled '}{formatLongDate(when)}</p>
