@@ -1,11 +1,5 @@
-# Render Blueprint: Dashboard -> New -> Blueprint -> pick this repo.
+# Free-tier setup. Render Blueprint: Dashboard -> New -> Blueprint -> pick this repo.
 # Values marked `sync: false` are prompted for during setup.
-databases:
-  - name: reachinbox-db
-    plan: free            # free Postgres expires after 30 days; use basic-256mb for anything lasting
-    databaseName: reachinbox
-    user: reachinbox
-
 services:
   - type: keyvalue        # Redis (BullMQ)
     name: reachinbox-redis
@@ -17,7 +11,7 @@ services:
     name: reachinbox-api
     runtime: node
     rootDir: backend
-    plan: starter         # free instances sleep, which stops the in-process scheduler worker
+    plan: free            # sleeps after 15 min idle: ping /api/health every 5 min (UptimeRobot) to keep the worker alive
     buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
@@ -31,7 +25,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase: { name: reachinbox-db, property: connectionString }
+        sync: false       # free Postgres from Neon or Supabase (Render's free DB expires after 30 days)
       - key: REDIS_URL
         fromService: { type: keyvalue, name: reachinbox-redis, property: connectionString }
       - key: ELASTICSEARCH_URL
