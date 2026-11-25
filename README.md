@@ -80,6 +80,17 @@ Next.js proxies `/api/*` to the backend, so the browser only ever talks to `:300
 - **Manual:** create accounts at https://ethereal.email/create and set `ETHEREAL_SENDERS=user1@ethereal.email:pass1,user2@ethereal.email:pass2`.
 - Every sent email has a **Preview** link in the Sent table (`nodemailer.getTestMessageUrl`).
 
+### Custom SMTP (for hosts that block ports 25/465/587)
+Many free hosts (including Render's free tier) block outbound SMTP on the standard ports, which makes Ethereal time out. Point the app at any SMTP server on an open port such as 2525, for example a free [Mailtrap](https://mailtrap.io) sandbox:
+```
+SMTP_HOST=sandbox.smtp.mailtrap.io
+SMTP_PORT=2525
+SMTP_USER=<username>
+SMTP_PASS=<password>
+SMTP_FROM_EMAIL=            # optional; used only when no sender exists yet
+```
+When `SMTP_HOST`, `SMTP_USER` and `SMTP_PASS` are set, every existing sender is pointed at that server (queued jobs keep working) and a sender is created if none exist. Leave them unset to keep using Ethereal. Mailtrap's free sandbox catches mail in a fake inbox and allows about 50 emails in total.
+
 ### Google OAuth
 1. Go to Google Cloud Console → APIs & Services → Credentials → *Create OAuth client ID* (Web application).
 2. Set the Authorized redirect URI to `http://localhost:3000/api/auth/google/callback`.
@@ -234,3 +245,18 @@ curl -X POST http://localhost:3000/api/emails/schedule \
 - [x] Reusable typed UI components and a typed API client
 
 ---
+
+## 5. Deploying to Render (free tier)
+
+The repo ships a Blueprint, [`render.yaml`](render.yaml), that creates a Redis (Key Value) instance, the API (with the BullMQ worker running in the same process) and the Next.js dashboard. Postgres comes from a free external provider because Render's free database expires after 30 days.
+
+1. **Postgres:** create a free project on [Neon](https://neon.tech) or Supabase and copy the connection string (it should end in `?sslmode=require`).
+2. **Blueprint:** in Render choose *New → Blueprint*, select this repo and branch `main`, and paste the connection string as `DATABASE_URL`. Enter any placeholder for the other prompted values, except `BACKEND_URL`, which must be a real `https://` URL.
+3. **Real URLs:** once both services exist, note their `.onrender.com` URLs and set:
+   - API: `FRONTEND_URL`, `GOOGLE_REDIRECT_URI` (`https://<web>/api/auth/google/callback`), `SLACK_REDIRECT_URI` (`https://<web>/api/slack/callback`), and the Google and Slack client IDs and secrets.
+   - Web: `BACKEND_URL=https://<api>` and `NEXT_PUBLIC_BULL_BOARD_URL=https://<web>/admin/queues` (redeploy the web service after changing it, because it is read at build time).
+4. **OAuth consoles:** add the same redirect URIs in Google Cloud Console and the Slack app settings. While the Google consent screen is in *Testing*, add your account as a test user.
+5. **SMTP:** set the custom SMTP variables from section 2, because Render's free tier blocks port 587.
+6. **Keep the worker awake:** free web services sleep after 15 minutes without traffic, which also stops the in-process worker. Create a free monitor on UptimeRobot or cron-job.org that requests `https://<api>/api/health` every 5 minutes.
+
+Notes: Bull Board is served through the dashboard origin (`/admin/queues`) because the session cookie belongs to that origin. Elasticsearch is not deployed, so search falls back to Postgres. Free Render instances have cold starts of up to a minute.
