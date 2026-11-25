@@ -46,6 +46,15 @@ export const config = {
     redirectUri: optional('SLACK_REDIRECT_URI'),
   },
 
+  // Optional custom SMTP (e.g. Mailtrap on port 2525). Needed on hosts that block 25/465/587.
+  smtp: {
+    host: optional('SMTP_HOST'),
+    port: int('SMTP_PORT', 2525),
+    user: optional('SMTP_USER'),
+    pass: optional('SMTP_PASS'),
+    fromEmail: optional('SMTP_FROM_EMAIL'),
+  },
+
   ethereal: {
     senders: optional('ETHEREAL_SENDERS'),
     autoCreate: int('ETHEREAL_AUTO_CREATE_SENDERS', 2),

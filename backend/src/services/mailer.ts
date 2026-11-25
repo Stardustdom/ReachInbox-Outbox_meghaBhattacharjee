@@ -32,6 +32,26 @@ async function upsertSender(user: string, pass: string, name: string) {
  *     the Ethereal API and persisted, so restarts reuse the same senders.
  */
 export async function ensureSenders(): Promise<void> {
+  const smtp = config.smtp;
+  if (smtp.host && smtp.user && smtp.pass) {
+    // Custom SMTP wins: point every existing sender at it (pending jobs keep their sender
+    // ids), and create one sender if none exist yet.
+    await query(
+      `UPDATE senders SET smtp_host = $1, smtp_port = $2, smtp_secure = false, smtp_user = $3, smtp_pass = $4`,
+      [smtp.host, smtp.port, smtp.user, smtp.pass],
+    );
+    const [{ n }] = await query<{ n: string }>(`SELECT count(*) AS n FROM senders`);
+    if (Number(n) === 0) {
+      await query(
+        `INSERT INTO senders (email, name, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_pass)
+         VALUES ($1, 'Sender 1', $2, $3, false, $4, $5)`,
+        [smtp.fromEmail || 'sender@reachinbox.local', smtp.host, smtp.port, smtp.user, smtp.pass],
+      );
+    }
+    console.log(`[mailer] using custom SMTP ${smtp.host}:${smtp.port}`);
+    return;
+  }
+
   const pairs = config.ethereal.senders
     .split(',')
     .map((p) => p.trim())
