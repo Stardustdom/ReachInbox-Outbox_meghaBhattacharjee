@@ -1,0 +1,67 @@
+# Render Blueprint: Dashboard -> New -> Blueprint -> pick this repo.
+# Values marked `sync: false` are prompted for during setup.
+databases:
+  - name: reachinbox-db
+    plan: free            # free Postgres expires after 30 days; use basic-256mb for anything lasting
+    databaseName: reachinbox
+    user: reachinbox
+
+services:
+  - type: keyvalue        # Redis (BullMQ)
+    name: reachinbox-redis
+    plan: free
+    maxmemoryPolicy: noeviction   # required by BullMQ
+    ipAllowList: []       # internal access only
+
+  - type: web
+    name: reachinbox-api
+    runtime: node
+    rootDir: backend
+    plan: starter         # free instances sleep, which stops the in-process scheduler worker
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: RUN_WORKER_IN_PROCESS
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase: { name: reachinbox-db, property: connectionString }
+      - key: REDIS_URL
+        fromService: { type: keyvalue, name: reachinbox-redis, property: connectionString }
+      - key: ELASTICSEARCH_URL
+        value: ""
+      - key: FRONTEND_URL
+        sync: false       # https://<reachinbox-web>.onrender.com
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false       # https://<reachinbox-web>.onrender.com/api/auth/google/callback
+      - key: SLACK_CLIENT_ID
+        sync: false
+      - key: SLACK_CLIENT_SECRET
+        sync: false
+      - key: SLACK_REDIRECT_URI
+        sync: false       # https://<reachinbox-web>.onrender.com/api/slack/callback
+
+  - type: web
+    name: reachinbox-web
+    runtime: node
+    rootDir: frontend
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: BACKEND_URL
+        sync: false       # https://<reachinbox-api>.onrender.com
+      - key: NEXT_PUBLIC_BULL_BOARD_URL
+        sync: false       # https://<reachinbox-api>.onrender.com/admin/queues
